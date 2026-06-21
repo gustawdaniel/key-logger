@@ -1,0 +1,10 @@
+[package]
+name = "rust-keylogger"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[dependencies]
+byteorder = "1.4.3"
+rusqlite = "0.40.1"
+x11 = "2.21.0"
