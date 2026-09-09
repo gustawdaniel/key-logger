@@ -1,0 +1,18 @@
+[Unit]
+Description=Keystroke OTLP Forwarder (SQLite to SigNoz OTLP)
+Documentation=https://github.com/gustawdaniel/key-logger
+After=keylogger.service
+Wants=keylogger.service
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/keystroke-otlp-forwarder.py
+Restart=on-failure
+RestartSec=5
+Environment=KEYLOGGER_DB_PATH=%h/.local/share/rust-keylogger/keylog.db
+Environment=OTLP_LOGS_URL=http://127.0.0.1:4318/v1/logs
+Environment=OTLP_METRICS_URL=http://127.0.0.1:4318/v1/metrics
+Environment=HOST_NAME=rog
+
+[Install]
+WantedBy=default.target

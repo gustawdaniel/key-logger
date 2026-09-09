@@ -173,6 +173,7 @@ name = "rust-keylogger"
 version = "0.1.0"
 dependencies = [
  "byteorder",
+ "libc",
  "rusqlite",
  "x11",
 ]

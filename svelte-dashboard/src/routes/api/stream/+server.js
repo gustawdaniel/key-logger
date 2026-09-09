@@ -1,15 +1,59 @@
 import sqlite3 from 'sqlite3';
 import os from 'os';
 import path from 'path';
+import { getNewEvents, BACKEND } from '$lib/backend.js';
 
 const homeDir = os.homedir();
 const dbPath = path.join(homeDir, '.local', 'share', 'rust-keylogger', 'keylog.db');
 
 export function GET({ url }) {
+    let lastId = parseInt(url.searchParams.get('lastId') || '0', 10);
+    // ClickHouse używa timestampu zamiast ID
+    let lastTimestampMs = parseInt(url.searchParams.get('lastTs') || '0', 10);
+    if (!lastTimestampMs) lastTimestampMs = Date.now() - 5000; // ostatnie 5 sek
+
+    // ========== ClickHouse SSE (polling) ==========
+    if (BACKEND === 'clickhouse') {
+        let timer;
+        const stream = new ReadableStream({
+            start(controller) {
+                async function poll() {
+                    try {
+                        const rows = await getNewEvents(lastTimestampMs, 100);
+                        if (rows && rows.length > 0) {
+                            rows.forEach(row => {
+                                const data = `data: ${JSON.stringify(row)}\n\n`;
+                                controller.enqueue(new TextEncoder().encode(data));
+                                if (row.timestamp > lastTimestampMs) {
+                                    lastTimestampMs = row.timestamp;
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error('ClickHouse stream error:', e);
+                    }
+                }
+                poll(); // pierwsze wywołanie od razu
+                timer = setInterval(poll, 500); // polling co 500ms
+            },
+            cancel() {
+                if (timer) clearInterval(timer);
+            }
+        });
+
+        return new Response(stream, {
+            headers: {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+            }
+        });
+    }
+
+    // ========== SQLite SSE (polling) ==========
     let db;
     let timer;
-    let lastId = parseInt(url.searchParams.get('lastId') || '0', 10);
-    
+
     const stream = new ReadableStream({
         start(controller) {
             db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
@@ -18,9 +62,9 @@ export function GET({ url }) {
                     controller.error(err);
                     return;
                 }
-                
+
                 db.run('PRAGMA journal_mode = WAL');
-                
+
                 if (!lastId) {
                     db.get('SELECT MAX(id) as maxId FROM keystrokes', [], (err, row) => {
                         if (!err && row && row.maxId) {
@@ -40,7 +84,7 @@ export function GET({ url }) {
                             console.error('Błąd odczytu z bazy podczas pollingu:', err);
                             return;
                         }
-                        
+
                         if (rows && rows.length > 0) {
                             rows.forEach(row => {
                                 const data = `data: ${JSON.stringify(row)}\n\n`;
@@ -49,7 +93,7 @@ export function GET({ url }) {
                             });
                         }
                     });
-                }, 150); // Szybki polling 150ms
+                }, 150);
             }
         },
         cancel() {
