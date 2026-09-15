@@ -4,7 +4,7 @@ use std::os::unix::io::AsRawFd;
 use std::sync::mpsc;
 
 mod details;
-mod x11_logger;
+mod evdev_logger;
 mod events;
 mod db;
 
@@ -37,9 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Uruchomienie wątku zapisującego w tle
     db::start_db_thread(rx);
 
-    // Run X11 event loop (blocks indefinitely)
-    x11_logger::run(tx)?;
+    // Run evdev event loop (blocks indefinitely)
+    evdev_logger::run(tx)?;
     Ok(())
 }
-
-// Dead helper removed – not used in X11 logger

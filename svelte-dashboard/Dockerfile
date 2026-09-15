@@ -17,7 +17,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Przepisz pliki API tak, by w obrazie produkcyjnym nie importowały natywnego modułu sqlite3
-RUN sed -i "s|import sqlite3 from 'sqlite3';||g" src/routes/api/*/+server.js
+RUN find src/routes/api -name '+server.js' -exec sed -i "s|import sqlite3 from 'sqlite3';||g" {} +
 
 
 # Zainstaluj adapter-node i podmień adapter-auto w vite.config.js

@@ -3,7 +3,7 @@
 
     // --- STAN APLIKACJI I MOTYW ---
     let theme = $state('matrix'); // 'matrix' | 'neon' | 'amber' | 'ghost'
-    let activeTab = $state('terminal'); // 'terminal' | 'bursts' | 'stats' | 'raw'
+    let activeTab = $state('terminal'); // 'terminal' | 'journal' | 'bursts' | 'stats' | 'raw'
     let textMode = $state('clean'); // 'clean' | 'raw'
     let soundEnabled = $state(false);
 
@@ -158,6 +158,9 @@
 
         // 2. Pobierz zagregowane statystyki telemetryczne
         loadServerStats(statsRange);
+
+        // 2b. Pobierz dziennik myśli i promptów dzisiejszego dnia
+        loadJournal(journalDate);
 
         // 3. Połącz strumień SSE na żywo
         eventSource = new EventSource('/api/stream?lastId=' + lastId);
@@ -649,6 +652,88 @@
     }
 
     let diurnalMatrix = $derived(buildDiurnalMatrix(serverStats?.dayHourlyActivity));
+
+    // --- DZIENNIK DNIA & EKSPORT DLA LLM ---
+    let journalDate = $state(new Date().toISOString().slice(0, 10));
+    /** @type {any} */
+    let journalData = $state(null);
+    let isLoadingJournal = $state(false);
+    let journalCategoryFilter = $state('all'); // 'all' | 'prompt' | 'shell' | 'code' | 'note'
+    let journalSearchTerm = $state('');
+    let copyFeedback = $state('');
+    let showMarkdownDrawer = $state(false);
+    let journalError = $state('');
+
+    async function loadJournal(date = journalDate) {
+        isLoadingJournal = true;
+        journalError = '';
+        try {
+            const res = await fetch(`/api/journal?date=${date}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            journalData = data;
+            journalDate = data.date || date;
+        } catch (e) {
+            console.error('Failed to load journal:', e);
+            journalError = e.message;
+        } finally {
+            isLoadingJournal = false;
+        }
+    }
+
+    async function copyLlmPrompt() {
+        if (!journalData?.llmPromptMarkdown) return;
+        try {
+            await navigator.clipboard.writeText(journalData.llmPromptMarkdown);
+            copyFeedback = '✅ SKOPIOWANO PROMPT DO SCHOWKA! (Wklej do Claude / ChatGPT / Gemini)';
+            setTimeout(() => { copyFeedback = ''; }, 3500);
+        } catch (e) {
+            console.error('Copy failed:', e);
+            copyFeedback = '❌ Błąd kopiowania do schowka';
+            setTimeout(() => { copyFeedback = ''; }, 3000);
+        }
+    }
+
+    async function copySingleChunk(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            copyFeedback = '✅ Skopiowano fragment do schowka!';
+            setTimeout(() => { copyFeedback = ''; }, 2000);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function downloadMarkdown() {
+        if (!journalData?.llmPromptMarkdown) return;
+        const blob = new Blob([journalData.llmPromptMarkdown], { type: 'text/markdown;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `dziennik-pracy-${journalDate}.md`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    let countPrompts = $derived(journalData?.chunks?.filter(c => c.category === 'prompt').length || 0);
+    let countShell = $derived(journalData?.chunks?.filter(c => c.category === 'shell').length || 0);
+    let countCode = $derived(journalData?.chunks?.filter(c => c.category === 'code').length || 0);
+    let countNote = $derived(journalData?.chunks?.filter(c => c.category === 'note').length || 0);
+
+    let filteredJournalSessions = $derived.by(() => {
+        if (!journalData?.sessions) return [];
+        const q = journalSearchTerm.toLowerCase().trim();
+        return journalData.sessions.map(s => {
+            const matchingChunks = s.chunks.filter(c => {
+                const catMatch = (journalCategoryFilter === 'all' || c.category === journalCategoryFilter);
+                const textMatch = (!q || c.text.toLowerCase().includes(q));
+                return catMatch && textMatch;
+            });
+            return { ...s, chunks: matchingChunks };
+        }).filter(s => s.chunks.length > 0);
+    });
 </script>
 
 <svelte:head>
@@ -696,6 +781,9 @@
     <nav class="view-tabs">
         <button class="tab-btn {activeTab === 'terminal' ? 'active' : ''}" onclick={() => activeTab = 'terminal'}>
             🖥️ Terminal Stream
+        </button>
+        <button class="tab-btn {activeTab === 'journal' ? 'active' : ''}" onclick={() => { activeTab = 'journal'; if (!journalData) loadJournal(); }}>
+            📑 Day Journal & LLM Digest
         </button>
         <button class="tab-btn {activeTab === 'bursts' ? 'active' : ''}" onclick={() => activeTab = 'bursts'}>
             📦 Session Bursts & Chunks ({bursts.length})
@@ -879,6 +967,263 @@
                         {/if}
                     </div>
                 </aside>
+            </div>
+
+        <!-- TAB: DAY JOURNAL & LLM CONTEXT EXPORT -->
+        {:else if activeTab === 'journal'}
+            <div class="tab-layout journal-tab">
+                <!-- Top Journal Control Bar -->
+                <section class="panel journal-header-panel">
+                    <div class="journal-controls-top">
+                        <div class="date-selector-group">
+                            <span class="group-label">📅 DZIEŃ:</span>
+                            <div class="date-quick-pills">
+                                {#if journalData?.availableDates?.length}
+                                    {#each journalData.availableDates.slice(0, 8) as d}
+                                        <button 
+                                            class="date-pill {journalDate === d ? 'active' : ''}" 
+                                            onclick={() => { journalDate = d; loadJournal(d); }}
+                                        >
+                                            {d === new Date().toISOString().slice(0, 10) ? 'Dzisiaj (' + d + ')' : d}
+                                        </button>
+                                    {/each}
+                                {:else}
+                                    <button class="date-pill active">{journalDate}</button>
+                                {/if}
+                            </div>
+                            <input 
+                                type="date" 
+                                class="date-picker-input" 
+                                bind:value={journalDate} 
+                                onchange={() => loadJournal(journalDate)} 
+                            />
+                            <button class="refresh-btn" onclick={() => loadJournal(journalDate)} title="Odśwież dane">
+                                🔄
+                            </button>
+                        </div>
+
+                        <!-- Main Actions -->
+                        <div class="journal-actions-group">
+                            {#if copyFeedback}
+                                <div class="copy-toast glow-pulse">{copyFeedback}</div>
+                            {/if}
+                            <button 
+                                class="action-btn-primary glow-btn" 
+                                onclick={copyLlmPrompt}
+                                disabled={!journalData || journalData.totalChunks === 0}
+                                title="Kopiuj gotowy transkrypt ze wskazówkami dla AI do schowka"
+                            >
+                                <span class="btn-icon">📋</span>
+                                <span class="btn-text">KOPIUJ PROMPT DLA LLM</span>
+                            </button>
+                            <button 
+                                class="action-btn-secondary" 
+                                onclick={downloadMarkdown}
+                                disabled={!journalData || journalData.totalChunks === 0}
+                                title="Pobierz plik Markdown (.md)"
+                            >
+                                💾 Pobierz .md
+                            </button>
+                            <a 
+                                href="/api/journal/raw?date={journalDate}" 
+                                target="_blank" 
+                                rel="noreferrer"
+                                class="action-btn-secondary raw-link-btn" 
+                                title="Otwórz czysty, surowy tekst w nowej karcie (możesz skopiować przez Ctrl+A, Ctrl+C)"
+                            >
+                                📄 Surowy Tekst (Nowa Karta)
+                            </a>
+                            <button 
+                                class="action-btn-secondary {showMarkdownDrawer ? 'active' : ''}" 
+                                onclick={() => showMarkdownDrawer = !showMarkdownDrawer}
+                                title="Podgląd wygenerowanego promptu Markdown"
+                            >
+                                {showMarkdownDrawer ? '🔼 Ukryj MD' : '👁️ Podgląd Promptu'}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Telemetry KPI Summary Cards -->
+                    <div class="journal-kpi-grid">
+                        <div class="kpi-card">
+                            <span class="kpi-label">ROZPOZNANE MYŚLI</span>
+                            <span class="kpi-val">{journalData?.totalChunks || 0}</span>
+                            <span class="kpi-sub">duże, spójne chunki</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">WPISANE SŁOWA</span>
+                            <span class="kpi-val">{journalData?.totalWords?.toLocaleString() || 0}</span>
+                            <span class="kpi-sub">merytoryczna treść</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">BLOKI PRACY (SESJE)</span>
+                            <span class="kpi-val">{journalData?.sessions?.length || 0}</span>
+                            <span class="kpi-sub">przerwy &gt; 25 min</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">PROMPTY I ZAPYTANIA</span>
+                            <span class="kpi-val prompt-glow">{countPrompts}</span>
+                            <span class="kpi-sub">pytania i zapytania AI</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">POLECENIA SHELLA</span>
+                            <span class="kpi-val shell-glow">{countShell}</span>
+                            <span class="kpi-sub">narzędzia CLI i terminal</span>
+                        </div>
+                    </div>
+
+                    <!-- Category Filter & Search Bar -->
+                    <div class="journal-filter-bar">
+                        <div class="filter-pills">
+                            <button 
+                                class="filter-pill {journalCategoryFilter === 'all' ? 'active' : ''}"
+                                onclick={() => journalCategoryFilter = 'all'}
+                            >
+                                Wszystko ({journalData?.totalChunks || 0})
+                            </button>
+                            <button 
+                                class="filter-pill prompt {journalCategoryFilter === 'prompt' ? 'active' : ''}"
+                                onclick={() => journalCategoryFilter = 'prompt'}
+                            >
+                                💬 Prompty AI ({countPrompts})
+                            </button>
+                            <button 
+                                class="filter-pill shell {journalCategoryFilter === 'shell' ? 'active' : ''}"
+                                onclick={() => journalCategoryFilter = 'shell'}
+                            >
+                                💻 Shell ({countShell})
+                            </button>
+                            <button 
+                                class="filter-pill code {journalCategoryFilter === 'code' ? 'active' : ''}"
+                                onclick={() => journalCategoryFilter = 'code'}
+                            >
+                                📝 Kod ({countCode})
+                            </button>
+                            <button 
+                                class="filter-pill note {journalCategoryFilter === 'note' ? 'active' : ''}"
+                                onclick={() => journalCategoryFilter = 'note'}
+                            >
+                                ⚡ Notatki ({countNote})
+                            </button>
+                        </div>
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input 
+                                type="text" 
+                                placeholder="Filtruj wpisy po słowie kluczowym..." 
+                                bind:value={journalSearchTerm} 
+                                class="search-input"
+                            />
+                            {#if journalSearchTerm}
+                                <button class="clear-search" onclick={() => journalSearchTerm = ''}>✕</button>
+                            {/if}
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Collapsible Raw Prompt Markdown Drawer -->
+                {#if showMarkdownDrawer && journalData?.llmPromptMarkdown}
+                    <section class="panel markdown-drawer-panel">
+                        <div class="panel-bar">
+                            <span class="panel-tag">&gt; LLM_SYSTEM_PROMPT_PREVIEW ({journalData.llmPromptMarkdown.length} chars)</span>
+                            <button class="mini-copy-btn" onclick={copyLlmPrompt}>
+                                📋 Kopiuj pełny Markdown
+                            </button>
+                        </div>
+                        <pre class="markdown-preview-block"><code>{journalData.llmPromptMarkdown}</code></pre>
+                    </section>
+                {/if}
+
+                <!-- Chronological Timeline Sessions Feed -->
+                <section class="panel journal-feed-panel">
+                    <div class="panel-bar">
+                        <span class="panel-tag">&gt; RECONSTRUCTED_CHRONOLOGICAL_STREAM // {journalDate}</span>
+                        <span class="count-badge">{filteredJournalSessions.reduce((acc, s) => acc + s.chunks.length, 0)} wpisów w widoku</span>
+                    </div>
+
+                    <div class="journal-feed">
+                        {#if isLoadingJournal}
+                            <div class="journal-loading">
+                                <div class="scanner-line"></div>
+                                <p>⏳ Rekonstrukcja strumienia klawiatury dla {journalDate}...</p>
+                            </div>
+                        {:else if journalError}
+                            <div class="journal-error">
+                                <p>⚠️ Błąd ładowania dziennika: {journalError}</p>
+                                <button onclick={() => loadJournal(journalDate)} class="retry-btn">Spróbuj ponownie</button>
+                            </div>
+                        {:else if filteredJournalSessions.length === 0}
+                            <div class="empty-state">
+                                📭 Brak zarejestrowanych myśli dla wybranych kryteriów w dniu {journalDate}.
+                                {#if journalData?.availableDates?.length}
+                                    <div class="empty-suggestions">
+                                        Dostępne dni z zarejestrowaną historią:
+                                        {#each journalData.availableDates.slice(0, 5) as d}
+                                            <button class="suggest-date-btn" onclick={() => { journalDate = d; loadJournal(d); }}>{d}</button>
+                                        {/each}
+                                    </div>
+                                {/if}
+                            </div>
+                        {:else}
+                            {#each filteredJournalSessions as session (session.id)}
+                                <div class="session-block">
+                                    <div class="session-header">
+                                        <div class="session-title">
+                                            <span class="session-indicator"></span>
+                                            <h3>{session.label}</h3>
+                                            <span class="session-timerange">{session.startTimeStr.slice(0, 5)} – {session.endTimeStr.slice(0, 5)}</span>
+                                        </div>
+                                        <span class="session-count-badge">{session.chunks.length} wpisów</span>
+                                    </div>
+
+                                    <div class="session-chunks-grid">
+                                        {#each session.chunks as chunk (chunk.id)}
+                                            <div class="thought-card category-{chunk.category}">
+                                                <div class="thought-header">
+                                                    <div class="thought-badge {chunk.category}">
+                                                        <span>{chunk.icon}</span>
+                                                        <span>{chunk.categoryLabel}</span>
+                                                    </div>
+                                                    <div class="thought-meta">
+                                                        <span class="thought-time">🕒 {chunk.startTimeStr}</span>
+                                                        <span class="thought-duration">⏱️ {chunk.durationSec}s</span>
+                                                        <span class="thought-words">{chunk.words} słów</span>
+                                                    </div>
+                                                    <button 
+                                                        class="thought-copy-btn" 
+                                                        onclick={() => copySingleChunk(chunk.text)}
+                                                        title="Kopiuj ten wpis do schowka"
+                                                    >
+                                                        📋
+                                                    </button>
+                                                </div>
+
+                                                <div class="thought-body">
+                                                    {#if chunk.category === 'shell'}
+                                                        <div class="terminal-command-box">
+                                                            <span class="term-prompt">$</span>
+                                                            <pre class="term-cmd"><code>{chunk.text}</code></pre>
+                                                        </div>
+                                                    {:else if chunk.category === 'prompt'}
+                                                        <blockquote class="ai-prompt-box">
+                                                            <p>{chunk.text}</p>
+                                                        </blockquote>
+                                                    {:else if chunk.category === 'code'}
+                                                        <pre class="code-thought-box"><code>{chunk.text}</code></pre>
+                                                    {:else}
+                                                        <div class="general-thought-box">
+                                                            <p>{chunk.text}</p>
+                                                        </div>
+                                                    {/if}
+                                                </div>
+                                            </div>
+                                        {/each}
+                                    </div>
+                                </div>
+                            {/each}
+                        {/if}
+                    </div>
+                </section>
             </div>
 
         <!-- TAB 2: BURSTS & SESSION CHUNKS -->
@@ -2072,4 +2417,604 @@
     .count-badge { background: var(--text-ghost); font-size: 0.7rem; padding: 0.1em 0.5em; border-radius: 3px; }
     .mt-sm { margin-top: 0.5rem; }
     .mb-md { margin-bottom: 1rem; }
+
+    /* ================= DZIENNIK DNIA & EKSPORT DLA LLM ================= */
+    .journal-tab {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        flex: 1;
+        min-height: 0;
+    }
+
+    .journal-header-panel {
+        background: var(--bg-panel);
+        border: 1px solid var(--border-dim);
+        border-radius: 6px;
+    }
+
+    .journal-controls-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: rgba(0,0,0,0.5);
+        border-bottom: 1px solid var(--border-dim);
+    }
+
+    .date-selector-group {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .group-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-dim);
+    }
+
+    .date-quick-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
+
+    .date-pill {
+        background: rgba(0,0,0,0.4);
+        border: 1px solid var(--border-dim);
+        color: var(--text-dim);
+        padding: 0.25rem 0.6rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .date-pill:hover {
+        border-color: var(--text-bright);
+        color: var(--text-bright);
+    }
+    .date-pill.active {
+        background: var(--text-ghost);
+        border-color: var(--border-color);
+        color: var(--text-bright);
+        box-shadow: var(--glow);
+        font-weight: 700;
+    }
+
+    .date-picker-input {
+        background: rgba(0,0,0,0.6);
+        border: 1px solid var(--border-dim);
+        color: var(--text-bright);
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.75rem;
+        color-scheme: dark;
+    }
+
+    .refresh-btn {
+        background: transparent;
+        border: 1px solid var(--border-dim);
+        border-radius: 4px;
+        padding: 0.2rem 0.5rem;
+        cursor: pointer;
+        color: var(--text-dim);
+        transition: all 0.2s;
+    }
+    .refresh-btn:hover {
+        border-color: var(--text-bright);
+        transform: rotate(45deg);
+    }
+
+    .journal-actions-group {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        position: relative;
+    }
+
+    .action-btn-primary {
+        background: linear-gradient(135deg, rgba(16,185,129,0.35), rgba(6,78,59,0.7));
+        border: 1px solid var(--border-color);
+        color: var(--text-bright);
+        padding: 0.45rem 1.1rem;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 0 12px var(--border-dim);
+        transition: all 0.2s ease;
+    }
+    .action-btn-primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 0 20px var(--border-color);
+        filter: brightness(1.15);
+    }
+    .action-btn-primary:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .action-btn-secondary {
+        background: rgba(0,0,0,0.4);
+        border: 1px solid var(--border-dim);
+        color: var(--text-dim);
+        padding: 0.45rem 0.85rem;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 0.78rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        transition: all 0.2s;
+    }
+    .action-btn-secondary:hover:not(:disabled) {
+        border-color: var(--text-bright);
+        color: var(--text-bright);
+    }
+    .action-btn-secondary.active {
+        background: var(--text-ghost);
+        border-color: var(--border-color);
+        color: var(--text-bright);
+    }
+    .action-btn-secondary:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .copy-toast {
+        position: absolute;
+        top: -38px;
+        right: 0;
+        background: var(--text-bright);
+        color: #040804;
+        font-weight: 800;
+        font-size: 0.75rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 4px;
+        box-shadow: 0 0 15px var(--glow);
+        z-index: 10;
+        white-space: nowrap;
+        pointer-events: none;
+        animation: toastSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes toastSlide {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .journal-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+        padding: 0.8rem 1rem;
+        background: rgba(0,0,0,0.3);
+        border-bottom: 1px solid var(--border-dim);
+    }
+    .kpi-card {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .kpi-label {
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .kpi-val {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: var(--text-bright);
+        line-height: 1.2;
+    }
+    .kpi-sub {
+        font-size: 0.65rem;
+        color: var(--text-ghost);
+    }
+    .prompt-glow {
+        color: #38bdf8 !important;
+        text-shadow: 0 0 10px rgba(56,189,248,0.5);
+    }
+    .shell-glow {
+        color: #34d399 !important;
+        text-shadow: 0 0 10px rgba(52,211,153,0.5);
+    }
+
+    .journal-filter-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0.6rem 1rem;
+        background: rgba(0,0,0,0.4);
+    }
+
+    .filter-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+    .filter-pill {
+        background: transparent;
+        border: 1px solid var(--border-dim);
+        color: var(--text-dim);
+        padding: 0.2rem 0.6rem;
+        border-radius: 3px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .filter-pill.active {
+        background: var(--text-ghost);
+        border-color: var(--border-color);
+        color: var(--text-bright);
+        font-weight: 700;
+    }
+    .filter-pill.prompt.active {
+        border-color: #38bdf8;
+        color: #38bdf8;
+        box-shadow: 0 0 8px rgba(56,189,248,0.4);
+    }
+    .filter-pill.shell.active {
+        border-color: #10b981;
+        color: #34d399;
+        box-shadow: 0 0 8px rgba(16,185,129,0.4);
+    }
+    .filter-pill.code.active {
+        border-color: #f59e0b;
+        color: #fbbf24;
+        box-shadow: 0 0 8px rgba(245,158,11,0.4);
+    }
+    .filter-pill.note.active {
+        border-color: #c084fc;
+        color: #d8b4fe;
+        box-shadow: 0 0 8px rgba(192,132,252,0.4);
+    }
+
+    .search-box {
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+    .search-icon {
+        position: absolute;
+        left: 8px;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        pointer-events: none;
+    }
+    .search-input {
+        background: rgba(0,0,0,0.6);
+        border: 1px solid var(--border-dim);
+        color: var(--text-bright);
+        padding: 0.3rem 1.6rem 0.3rem 1.8rem;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 0.75rem;
+        width: 220px;
+        transition: width 0.2s, border-color 0.2s;
+    }
+    .search-input:focus {
+        width: 280px;
+        border-color: var(--border-color);
+        outline: none;
+        box-shadow: var(--glow);
+    }
+    .clear-search {
+        position: absolute;
+        right: 6px;
+        background: transparent;
+        border: none;
+        color: var(--text-dim);
+        cursor: pointer;
+        font-size: 0.75rem;
+    }
+
+    .markdown-drawer-panel {
+        border: 1px solid var(--border-color);
+        background: #040804;
+        margin-bottom: 0.5rem;
+    }
+    .markdown-preview-block {
+        margin: 0;
+        padding: 1rem;
+        max-height: 280px;
+        overflow-y: auto;
+        font-family: 'Fira Code', 'Share Tech Mono', monospace;
+        font-size: 0.75rem;
+        line-height: 1.5;
+        color: var(--text-bright);
+        white-space: pre-wrap;
+        background: rgba(0,0,0,0.7);
+    }
+    .mini-copy-btn {
+        background: transparent;
+        border: 1px solid var(--border-dim);
+        color: var(--text-bright);
+        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+    .mini-copy-btn:hover {
+        background: var(--text-ghost);
+        border-color: var(--border-color);
+    }
+
+    .journal-feed-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 400px;
+    }
+    .journal-feed {
+        padding: 1rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        max-height: calc(100vh - 350px);
+    }
+
+    .session-block {
+        border: 1px solid var(--border-dim);
+        border-radius: 6px;
+        background: rgba(0,0,0,0.3);
+        overflow: hidden;
+    }
+    .session-header {
+        background: rgba(0,0,0,0.6);
+        border-bottom: 1px solid var(--border-dim);
+        padding: 0.6rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .session-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .session-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--border-color);
+        box-shadow: var(--glow);
+    }
+    .session-title h3 {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-bright);
+    }
+    .session-timerange {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+    }
+    .session-count-badge {
+        background: var(--text-ghost);
+        border: 1px solid var(--border-dim);
+        font-size: 0.7rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 3px;
+        color: var(--text-bright);
+    }
+
+    .session-chunks-grid {
+        padding: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .thought-card {
+        background: rgba(10, 16, 12, 0.5);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-left: 4px solid var(--text-dim);
+        border-radius: 4px;
+        padding: 0.75rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .thought-card:hover {
+        transform: translateX(2px);
+        border-color: rgba(255,255,255,0.15);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+    .thought-card.category-prompt {
+        border-left-color: #38bdf8;
+        background: rgba(8, 24, 38, 0.45);
+    }
+    .thought-card.category-shell {
+        border-left-color: #10b981;
+        background: rgba(6, 24, 14, 0.45);
+    }
+    .thought-card.category-code {
+        border-left-color: #f59e0b;
+        background: rgba(30, 20, 6, 0.45);
+    }
+    .thought-card.category-note {
+        border-left-color: #c084fc;
+        background: rgba(24, 12, 36, 0.45);
+    }
+
+    .thought-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .thought-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.15rem 0.5rem;
+        border-radius: 3px;
+        text-transform: uppercase;
+    }
+    .thought-badge.prompt {
+        background: rgba(56,189,248,0.15);
+        color: #38bdf8;
+        border: 1px solid rgba(56,189,248,0.3);
+    }
+    .thought-badge.shell {
+        background: rgba(16,185,129,0.15);
+        color: #34d399;
+        border: 1px solid rgba(16,185,129,0.3);
+    }
+    .thought-badge.code {
+        background: rgba(245,158,11,0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245,158,11,0.3);
+    }
+    .thought-badge.note {
+        background: rgba(192,132,252,0.15);
+        color: #c084fc;
+        border: 1px solid rgba(192,132,252,0.3);
+    }
+
+    .thought-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.7rem;
+        color: var(--text-dim);
+    }
+    .thought-copy-btn {
+        background: transparent;
+        border: 1px solid var(--border-dim);
+        border-radius: 3px;
+        color: var(--text-dim);
+        padding: 0.2rem 0.45rem;
+        cursor: pointer;
+        font-size: 0.75rem;
+        transition: all 0.2s;
+    }
+    .thought-copy-btn:hover {
+        border-color: var(--text-bright);
+        color: var(--text-bright);
+        transform: scale(1.05);
+    }
+
+    .terminal-command-box {
+        background: #040608;
+        border: 1px solid rgba(16,185,129,0.3);
+        border-radius: 4px;
+        padding: 0.6rem 0.8rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        font-family: 'Fira Code', monospace;
+        font-size: 0.85rem;
+    }
+    .term-prompt {
+        color: #10b981;
+        font-weight: bold;
+        user-select: none;
+    }
+    .term-cmd {
+        margin: 0;
+        color: #6ee7b7;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: inherit;
+    }
+
+    .ai-prompt-box {
+        margin: 0;
+        padding: 0.6rem 0.9rem;
+        background: rgba(56,189,248,0.06);
+        border-left: 3px solid #38bdf8;
+        border-radius: 0 4px 4px 0;
+        font-size: 0.9rem;
+        color: #f0f9ff;
+        line-height: 1.55;
+        word-break: break-word;
+    }
+    .ai-prompt-box p {
+        margin: 0;
+        white-space: pre-wrap;
+    }
+
+    .code-thought-box {
+        margin: 0;
+        padding: 0.6rem 0.8rem;
+        background: #08080a;
+        border: 1px solid rgba(245,158,11,0.3);
+        border-radius: 4px;
+        font-family: 'Fira Code', monospace;
+        font-size: 0.85rem;
+        color: #fef3c7;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .general-thought-box {
+        margin: 0;
+        padding: 0.3rem 0;
+        font-size: 0.9rem;
+        color: #e2e8f0;
+        line-height: 1.55;
+        word-break: break-word;
+    }
+    .general-thought-box p {
+        margin: 0;
+        white-space: pre-wrap;
+    }
+
+    .journal-loading, .journal-error {
+        padding: 3rem;
+        text-align: center;
+        color: var(--text-dim);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+    .scanner-line {
+        width: 120px;
+        height: 3px;
+        background: var(--text-bright);
+        box-shadow: var(--glow);
+        animation: scanPulse 1.2s infinite ease-in-out;
+    }
+    @keyframes scanPulse {
+        0% { opacity: 0.3; width: 40px; }
+        50% { opacity: 1; width: 160px; }
+        100% { opacity: 0.3; width: 40px; }
+    }
+
+    .suggest-date-btn {
+        background: var(--text-ghost);
+        border: 1px solid var(--border-dim);
+        color: var(--text-bright);
+        padding: 0.2rem 0.5rem;
+        border-radius: 3px;
+        margin: 0.2rem;
+        cursor: pointer;
+    }
+    .suggest-date-btn:hover {
+        border-color: var(--text-bright);
+    }
 </style>

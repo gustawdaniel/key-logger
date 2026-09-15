@@ -8,9 +8,6 @@ const dbPath = path.join(homeDir, '.local', 'share', 'rust-keylogger', 'keylog.d
 
 export function GET({ url }) {
     let lastId = parseInt(url.searchParams.get('lastId') || '0', 10);
-    // ClickHouse używa timestampu zamiast ID
-    let lastTimestampMs = parseInt(url.searchParams.get('lastTs') || '0', 10);
-    if (!lastTimestampMs) lastTimestampMs = Date.now() - 5000; // ostatnie 5 sek
 
     // ========== ClickHouse SSE (polling) ==========
     if (BACKEND === 'clickhouse') {
@@ -19,13 +16,13 @@ export function GET({ url }) {
             start(controller) {
                 async function poll() {
                     try {
-                        const rows = await getNewEvents(lastTimestampMs, 100);
+                        const rows = await getNewEvents(lastId, 100);
                         if (rows && rows.length > 0) {
                             rows.forEach(row => {
                                 const data = `data: ${JSON.stringify(row)}\n\n`;
                                 controller.enqueue(new TextEncoder().encode(data));
-                                if (row.timestamp > lastTimestampMs) {
-                                    lastTimestampMs = row.timestamp;
+                                if (row.id > lastId) {
+                                    lastId = row.id;
                                 }
                             });
                         }

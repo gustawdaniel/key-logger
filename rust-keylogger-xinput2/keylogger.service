@@ -1,19 +1,15 @@
 [Unit]
-Description=Rust Keylogger (XInput2 + SQLite)
+Description=Rust Keylogger (evdev + SQLite)
 Documentation=https://github.com/gustawdaniel/key-logger
-After=graphical-session.target
-PartOf=graphical-session.target
+After=default.target
 
 [Service]
 Type=simple
 ExecStart=%h/.local/bin/rust-keylogger-xinput2
-Restart=on-failure
-RestartSec=5
-# Ścieżka do bazy SQLite (domyślna z kodu)
+Restart=always
+RestartSec=3
+# Ścieżka do bazy SQLite
 Environment=KEYLOGGER_DB_PATH=%h/.local/share/rust-keylogger/keylog.db
-# Niezbędne dla X11 (sesja graficzna użytkownika)
-Environment=DISPLAY=:0
-Environment=XAUTHORITY=%h/.Xauthority
 
 [Install]
-WantedBy=graphical-session.target
+WantedBy=default.target

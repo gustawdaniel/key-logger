@@ -11,6 +11,8 @@ cargo build --release
 
 echo "==> 2. Zatrzymywanie ew. działającego serwisu i kopiowanie binarnego..."
 systemctl --user stop keylogger.service 2>/dev/null || true
+systemctl --user disable --now rust-keylogger-xinput2.service 2>/dev/null || true
+rm -f "$SYSTEMD_USER_DIR/rust-keylogger-xinput2.service"
 pkill -f rust-keylogger-xinput2 2>/dev/null || true
 sleep 1
 

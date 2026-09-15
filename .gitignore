@@ -1,0 +1,16 @@
+# Secrets & local configuration
+blacklist.txt
+*.secret
+secrets.txt
+.env.secrets
+.env.local
+
+# Build artifacts
+target/
+node_modules/
+.svelte-kit/
+build/
+dist/
+*.log
+*.lock
+*.db
