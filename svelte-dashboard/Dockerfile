@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Multi-stage build — SvelteKit z adapter-node dla ClickHouse (bez SQLite)
 
-FROM node:22-alpine AS base
+FROM node:26-alpine AS base
 
 # ===== deps =====
 FROM base AS deps
@@ -28,7 +28,7 @@ ENV NODE_ENV=production
 RUN npm run build
 
 # ===== runner =====
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 
 # Skopiuj zbudowaną aplikację i node_modules
