@@ -1,8 +1,12 @@
 {
   "target": "key-logger",
   "repo": "gustawdaniel/key-logger",
-  "files_count": 65,
-  "total_size_bytes": 431753,
+  "monorepo_sha": "4abd2bc383440f23046e7e156dd0cb82701a4f1e",
+  "monorepo_tag": "v2026.11.1",
+  "monorepo_ref": "v2026.11.1",
+  "timestamp": "2026-11-09T16:59:08.134487+00:00",
+  "files_count": 64,
+  "total_size_bytes": 419477,
   "files": [
     {
       "path": ".gitignore",
@@ -26,8 +30,8 @@
     },
     {
       "path": "SECURITY.md",
-      "size": 863,
-      "sha256": "518f69d89ff25f7cdcfbaed937df7ead83ce5970739b443977958d18321e589f"
+      "size": 861,
+      "sha256": "1f5d5b6fc6e469ef70ad958767e44284b8520ac8ad4e34c151b34e1557d756e1"
     },
     {
       "path": "blacklist.example.txt",
@@ -303,11 +307,6 @@
       "path": "rust-keylogger-rdev/.gitignore",
       "size": 7,
       "sha256": "c97ecfda4d205190b973232dcfdb0c29748521c2534dd866bcc782f30b086738"
-    },
-    {
-      "path": "rust-keylogger-rdev/Cargo.lock",
-      "size": 12274,
-      "sha256": "201a9722cf22a6676efdbf414e0cce1c6cbf06d6b0dfa70f713a2b4dd512dd8f"
     },
     {
       "path": "rust-keylogger-rdev/Cargo.toml",
