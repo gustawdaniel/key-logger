@@ -1,0 +1,18 @@
+# ==============================================================================
+# KEYLOGGER BLACKLIST & SECRETS SANITIZATION CONFIGURATION
+# ==============================================================================
+# Aby ukryć i zanonimizować swoje hasła, PIN-y, klucze API i poufne tokeny:
+# 
+# 1. Skopiuj ten plik do lokalnej lokalizacji użytkownika:
+#    mkdir -p ~/.config/rust-keylogger
+#    cp blacklist.example.txt ~/.config/rust-keylogger/blacklist.txt
+#    chmod 600 ~/.config/rust-keylogger/blacklist.txt
+#
+# 2. Wpisz poniżej swoje hasła (jedno hasło / PIN / token w jednej linii).
+#    Linie zaczynające się od # oraz puste są ignorowane.
+#    NIGDY NIE COMMITTUJ PLIKU blacklist.txt DO REPOZYTORIUM GIT!
+#
+# Przykłady (odkomentuj i zmień na własne):
+# TwojeSuperTajneHaslo123!
+# 9876
+# ==============================================================================

@@ -1,0 +1,333 @@
+{
+  "target": "key-logger",
+  "repo": "gustawdaniel/key-logger",
+  "files_count": 65,
+  "total_size_bytes": 431753,
+  "files": [
+    {
+      "path": ".gitignore",
+      "size": 176,
+      "sha256": "5337e40b0dffbe55f0779ea1f8f9168fe48013a68029db594361d4a94e712009"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "size": 1794,
+      "sha256": "e5bb671e2c220f3409dd82c30f49255eba3d1596142011e1adc5d23ec083d350"
+    },
+    {
+      "path": "LICENSE",
+      "size": 3077,
+      "sha256": "77e22acd975dbe5dc5c3b48d6bd84d0262971c139463e1f848203e67d8e86b1f"
+    },
+    {
+      "path": "README.md",
+      "size": 10824,
+      "sha256": "1fdf57a598e8348836ca6f6005054cb8b27267247503ea9b6540a8e3d6a149e2"
+    },
+    {
+      "path": "SECURITY.md",
+      "size": 863,
+      "sha256": "518f69d89ff25f7cdcfbaed937df7ead83ce5970739b443977958d18321e589f"
+    },
+    {
+      "path": "blacklist.example.txt",
+      "size": 896,
+      "sha256": "42252c47f813e9d3d9804f0707b788ee781bda3e7e70696ebe9712f274c691c1"
+    },
+    {
+      "path": "com.brain.keylogger.plist.example",
+      "size": 718,
+      "sha256": "94b28c1fad9e27887055b21d200fe63bb875d32a83e4eac0eacfa95635fc352d"
+    },
+    {
+      "path": "com.brain.keystroke-forwarder.plist.example",
+      "size": 940,
+      "sha256": "616635eb09dfd8cd620c6dd1f135c0a0b2f1715d551422663fbbdd0df33ff470"
+    },
+    {
+      "path": "install.sh",
+      "size": 1552,
+      "sha256": "280f0a8e46016e2c952ebdd6733b0e87754d7915b7030bf3e746ef17d3526e5b"
+    },
+    {
+      "path": "keystroke-forwarder.service",
+      "size": 530,
+      "sha256": "b242ef26970072fdb04360121006b4970b9d8b314ee889f75c96489d18c0a8f4"
+    },
+    {
+      "path": "rust-keylogger-xinput2/.gitignore",
+      "size": 8,
+      "sha256": "44c92e3a70ad3307b7056871c2bdb096d8bfa9373f5bf06a79bb6324a20ff2fb"
+    },
+    {
+      "path": "rust-keylogger-xinput2/Cargo.toml",
+      "size": 153,
+      "sha256": "eff8968515d409a3c812e2dd9d6d5ed68b43194bb167fae0ad60e79a44e43c68"
+    },
+    {
+      "path": "rust-keylogger-xinput2/README.md",
+      "size": 566,
+      "sha256": "a30b8bba1615f6b3dcc1df5a7dd43669bac62e1298a2045130f49ee54268fc46"
+    },
+    {
+      "path": "rust-keylogger-xinput2/build.rs",
+      "size": 157,
+      "sha256": "d77f8898c032008663e1795ef619b0ad28e77cde0151c880d51e2304b9ceb389"
+    },
+    {
+      "path": "rust-keylogger-xinput2/keylogger.service",
+      "size": 339,
+      "sha256": "c663e3ff21f896f07887faa60fd78bf2f7225801cb061bfe63317958910ec328"
+    },
+    {
+      "path": "rust-keylogger-xinput2/src/db.rs",
+      "size": 11923,
+      "sha256": "1a964dda22b3e7b6cfb58614d23eed9d7faafa29aa6fb70ad3011acd8ee8dd43"
+    },
+    {
+      "path": "rust-keylogger-xinput2/src/details.rs",
+      "size": 2283,
+      "sha256": "1877da6baba03985b9b30bdd57ce17649970ee1c95afaedfbd4fe83f6138b6de"
+    },
+    {
+      "path": "rust-keylogger-xinput2/src/evdev_logger.rs",
+      "size": 9415,
+      "sha256": "392d45a057a11d409b2c70b42c35b70527b877f4cb25d2f671e9fa544078359b"
+    },
+    {
+      "path": "rust-keylogger-xinput2/src/events.rs",
+      "size": 189,
+      "sha256": "e1df6cef09dc64e3f1427bc51758366706f94316e3032ce24bc6771b78dc0099"
+    },
+    {
+      "path": "rust-keylogger-xinput2/src/main.rs",
+      "size": 1260,
+      "sha256": "1d40c570ad20b266d91df9e181b1721695558024cac60b86b9c328a7966c67fd"
+    },
+    {
+      "path": "rust-keylogger-xinput2/src/x11_logger.rs",
+      "size": 3872,
+      "sha256": "cb6f53b37e72d137ae79d84f004921d5880579b4a8d60ae5892e595f306ed6d0"
+    },
+    {
+      "path": "rust-keylogger-evdev/.gitignore",
+      "size": 7,
+      "sha256": "c97ecfda4d205190b973232dcfdb0c29748521c2534dd866bcc782f30b086738"
+    },
+    {
+      "path": "rust-keylogger-evdev/Cargo.toml",
+      "size": 107,
+      "sha256": "f6345be980dbf3a31facae32467e193644c02b79a128186d0094eb906a9a5853"
+    },
+    {
+      "path": "rust-keylogger-evdev/src/main.rs",
+      "size": 3951,
+      "sha256": "69295dd5d63802686c9be8e0eea04f7e6d2911426c2daa20d11386a9ffe62c8d"
+    },
+    {
+      "path": "svelte-dashboard/.gitignore",
+      "size": 210,
+      "sha256": "d1aec8becdfa546cbb4ed193ffd576dd7f353c742cb9f361be4b2697ecefe992"
+    },
+    {
+      "path": "svelte-dashboard/.npmrc",
+      "size": 41,
+      "sha256": "4d2cc049785b8a4923dc512d8064cfea8d8bdd7bc15032a84c46947661962ebf"
+    },
+    {
+      "path": "svelte-dashboard/Dockerfile",
+      "size": 1407,
+      "sha256": "be91d7fc49eef0e0e9c51d463ab33c2f35241d29be67866b76f6ca4d2bd73e1f"
+    },
+    {
+      "path": "svelte-dashboard/README.md",
+      "size": 961,
+      "sha256": "e7f11bc3a8934f34e54d65472b47320c306b4a11e73f69afeb82655292e242cd"
+    },
+    {
+      "path": "svelte-dashboard/jsconfig.json",
+      "size": 649,
+      "sha256": "a8bc8321247d8e88eb2d42dd7c6ee07108cf1fbda1113f23618deee3920b3021"
+    },
+    {
+      "path": "svelte-dashboard/package-lock.json",
+      "size": 63659,
+      "sha256": "91780d68d6b0f3bd4cab89b6bd7f64efe0cca3e63e20f9e2bf60b4481ba834b2"
+    },
+    {
+      "path": "svelte-dashboard/package.json",
+      "size": 984,
+      "sha256": "b62f979fcb6e92c5c2cb712e9b73199c272b182664024eaeab406df790d56c8e"
+    },
+    {
+      "path": "svelte-dashboard/pnpm-lock.yaml",
+      "size": 53677,
+      "sha256": "e19c603985a9fa8bb899e90c74e630f18bde67d282a87e615e0cef8b23c1808e"
+    },
+    {
+      "path": "svelte-dashboard/pnpm-workspace.yaml",
+      "size": 35,
+      "sha256": "cffb30712a14e9f521500718ea1e05aebada8c964fb8d1e2c6083ffebe4bec50"
+    },
+    {
+      "path": "svelte-dashboard/svelte.config.js",
+      "size": 448,
+      "sha256": "d44040dfaf87aba687d99c8c217a62202d6f61f5ac7f7c86531b084a2beaece6"
+    },
+    {
+      "path": "svelte-dashboard/vite.config.js",
+      "size": 180,
+      "sha256": "b8aeca4f2c47b5aff09f0e4cd3cad53b9c2f5e30fdce4959c084d3c3bd5b7651"
+    },
+    {
+      "path": "svelte-dashboard/static/robots.txt",
+      "size": 63,
+      "sha256": "b033243267bcbdab84cb01e940811d6d77a894d78f0470faaf0eb43f8e4efcc9"
+    },
+    {
+      "path": "svelte-dashboard/scripts/init_keystroke_hourly_summary.sql",
+      "size": 2134,
+      "sha256": "54e0280aa0ee2a9ebe4c3e3003221e99471c031d7e6a9c71dd4be5f00f7f45ae"
+    },
+    {
+      "path": "svelte-dashboard/src/app.css",
+      "size": 1009,
+      "sha256": "50628f874f8ddf25328ada0a00d9aa869827637bbd10d212ea903c79e520938c"
+    },
+    {
+      "path": "svelte-dashboard/src/app.d.ts",
+      "size": 274,
+      "sha256": "3d450fc2fc7b0f10b6a9493a682769aac34f8b612f0f5d1bc4845a7b0bfe9f0a"
+    },
+    {
+      "path": "svelte-dashboard/src/app.html",
+      "size": 331,
+      "sha256": "824aebe3df873b559437d5e9dbf97f09f35c3b006608950cb582bcfbeae85faa"
+    },
+    {
+      "path": "svelte-dashboard/src/lib/backend.js",
+      "size": 26607,
+      "sha256": "62e6f1f853e3afb0a653ffd8bb3793c45dadf55895c1529109cec64ca23c8ae7"
+    },
+    {
+      "path": "svelte-dashboard/src/lib/index.js",
+      "size": 75,
+      "sha256": "4beec0ade3bea5be651939b305bccf69d48506c74eda0a1a50a0dd6c79c4e91a"
+    },
+    {
+      "path": "svelte-dashboard/src/lib/assets/favicon.svg",
+      "size": 1569,
+      "sha256": "d7d9227f0fe5bfb4189fb6ba4dd9e2d524f6a1dfd02bd901c65330987675c0b3"
+    },
+    {
+      "path": "svelte-dashboard/src/routes/+layout.svelte",
+      "size": 2674,
+      "sha256": "17709265ff7552952d20bbd6be86bc6c346687eb5ca5551f48a8d0acd77b5862"
+    },
+    {
+      "path": "svelte-dashboard/src/routes/[[tab]]/+page.svelte",
+      "size": 142190,
+      "sha256": "e208e26185ccce45fea32c7b62640551581e5bc49bc22501c2d77f65d5b17b15"
+    },
+    {
+      "path": "svelte-dashboard/src/routes/api/journal/+server.js",
+      "size": 4945,
+      "sha256": "59a13ee9dbad483f60fa484bb4b5635f3526400d5ac10d1aaf0be285e20fdc27"
+    },
+    {
+      "path": "svelte-dashboard/src/routes/api/journal/raw/+server.js",
+      "size": 583,
+      "sha256": "fe76d6ac01662762a0ac19d51ba119942eaf2263c38062344690a57ef5a16ed9"
+    },
+    {
+      "path": "svelte-dashboard/src/routes/api/stream/+server.js",
+      "size": 4916,
+      "sha256": "ec71f99f75eccf212e0f8abd7b058a62b29af7c9e0e8e50e683178f61f21b390"
+    },
+    {
+      "path": "svelte-dashboard/src/routes/api/history/+server.js",
+      "size": 1896,
+      "sha256": "f55c41067a43ad534b370fa425d11a61118daf2288f046df0e0ac6d9c652d9f6"
+    },
+    {
+      "path": "svelte-dashboard/src/routes/api/hosts/+server.js",
+      "size": 435,
+      "sha256": "1122d9175b3471a8a7779904a74a2adb83d534bfe1eb43dbec4536ea1a425d40"
+    },
+    {
+      "path": "svelte-dashboard/src/routes/api/stats/+server.js",
+      "size": 5461,
+      "sha256": "e8b09b163544586c26d463b8587e12ae01d78fba180a71800dfe10e3756d8789"
+    },
+    {
+      "path": "docs/SECURITY_AND_ANONYMIZATION.md",
+      "size": 6410,
+      "sha256": "d314b716b0485099358faa38ff86a295435d93327dfb38d0a8ce1904d9ad0cea"
+    },
+    {
+      "path": "rust-keylogger-inputs/.gitignore",
+      "size": 8,
+      "sha256": "44c92e3a70ad3307b7056871c2bdb096d8bfa9373f5bf06a79bb6324a20ff2fb"
+    },
+    {
+      "path": "rust-keylogger-inputs/Cargo.toml",
+      "size": 202,
+      "sha256": "9e50c941ab37b47a5d30a27772b8795f4cd13ea3fe16b989a6f40d61bb968361"
+    },
+    {
+      "path": "rust-keylogger-inputs/README.md",
+      "size": 566,
+      "sha256": "a30b8bba1615f6b3dcc1df5a7dd43669bac62e1298a2045130f49ee54268fc46"
+    },
+    {
+      "path": "rust-keylogger-inputs/src/details.rs",
+      "size": 2954,
+      "sha256": "f2080e2e884a288b12ed1a1e454d5b01f15c3eb5018572eca9167bda990a089e"
+    },
+    {
+      "path": "rust-keylogger-inputs/src/main.rs",
+      "size": 1370,
+      "sha256": "94d2e7e34454ec02aae6d92b5b5ec3ffb6636871a14bc525357973f75a93525c"
+    },
+    {
+      "path": "scripts/keystroke-otlp-forwarder.py",
+      "size": 11204,
+      "sha256": "fc11381a9413ce535c1c40cc54dd75d15aae6e6042fda8ea37c49062bf9d9ac9"
+    },
+    {
+      "path": "scripts/scrub_secrets.py",
+      "size": 5668,
+      "sha256": "738eaad196ae4423290541f16e1c4a5c72046a95e66f62df71e79f659a332aa6"
+    },
+    {
+      "path": "rust-keylogger-rdev/.gitignore",
+      "size": 7,
+      "sha256": "c97ecfda4d205190b973232dcfdb0c29748521c2534dd866bcc782f30b086738"
+    },
+    {
+      "path": "rust-keylogger-rdev/Cargo.lock",
+      "size": 12274,
+      "sha256": "201a9722cf22a6676efdbf414e0cce1c6cbf06d6b0dfa70f713a2b4dd512dd8f"
+    },
+    {
+      "path": "rust-keylogger-rdev/Cargo.toml",
+      "size": 178,
+      "sha256": "1c927f6910ca3d6470b66be4a08d47e469bd64be60e044af0775820fc9afe32c"
+    },
+    {
+      "path": "rust-keylogger-rdev/src/db.rs",
+      "size": 11403,
+      "sha256": "55b59e19f89fb39ec935d1bf18bac1e9580c35f8fbe9b431b7045d8ad5d2601c"
+    },
+    {
+      "path": "rust-keylogger-rdev/src/events.rs",
+      "size": 189,
+      "sha256": "e1df6cef09dc64e3f1427bc51758366706f94316e3032ce24bc6771b78dc0099"
+    },
+    {
+      "path": "rust-keylogger-rdev/src/main.rs",
+      "size": 6307,
+      "sha256": "0e93419bf2d88c0e983810488b6c9fb581e582dc68ab4440af2e3ed357829d1d"
+    }
+  ]
+}

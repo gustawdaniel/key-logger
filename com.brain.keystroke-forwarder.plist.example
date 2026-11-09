@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.brain.keystroke-forwarder</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/usr/local/bin/keystroke-otlp-forwarder.py</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/tmp</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>KEYLOGGER_DB_PATH</key>
+        <string>/tmp/keylog.db</string>
+        <key>OTLP_LOGS_URL</key>
+        <string>http://localhost:4318/v1/logs</string>
+        <key>OTLP_METRICS_URL</key>
+        <string>http://localhost:4318/v1/metrics</string>
+        <key>PYTHONUNBUFFERED</key>
+        <string>1</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>

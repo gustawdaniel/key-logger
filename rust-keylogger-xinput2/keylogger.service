@@ -1,0 +1,14 @@
+[Unit]
+Description=Rust Keylogger (evdev + SQLite)
+Documentation=https://github.com/gustawdaniel/key-logger
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/rust-keylogger-xinput2
+Restart=always
+RestartSec=3
+# Ścieżka do bazy SQLite
+Environment=KEYLOGGER_DB_PATH=%h/.local/share/rust-keylogger/keylog.db
+
+[Install]
+WantedBy=default.target

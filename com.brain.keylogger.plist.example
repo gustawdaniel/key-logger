@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.brain.keylogger</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/rust-keylogger</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/tmp</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>KEYLOGGER_DB_PATH</key>
+        <string>/tmp/keylog.db</string>
+        <key>KEYLOGGER_BLACKLIST_PATH</key>
+        <string>/tmp/blacklist.txt</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>
